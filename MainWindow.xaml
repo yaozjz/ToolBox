@@ -1,0 +1,89 @@
+﻿<Window
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:ToolBox"
+        xmlns:av="http://schemas.microsoft.com/expression/blend/2008" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" mc:Ignorable="av" x:Class="ToolBox.MainWindow"
+        Title="工具箱" Height="500" Width="900"
+        WindowStartupLocation="CenterScreen" Icon="fileEdit.ico" Closing="MainForm_Closing">
+
+    <!--菜单设置-->
+    <DockPanel LastChildFill="True">
+        <Menu DockPanel.Dock="Top">
+            <MenuItem Header="_文件">
+                <MenuItem Header="_创建数据库" Click="Create_SQL_Click"/>
+                <MenuItem Header="_退出" Click="Exit_Click"/>
+            </MenuItem>
+            <MenuItem Header="_操作">
+                <MenuItem Header="_添加类型" Click="AddGroup_Click"/>
+            </MenuItem>
+            <MenuItem Header="_关于"/>
+        </Menu>
+        <!--菜单设置结束-->
+        <!--本体网格设置-->
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="2*"/>
+                <ColumnDefinition Width="5"/>
+                <ColumnDefinition Width="8*"/>
+            </Grid.ColumnDefinitions>
+            <!--组显示，设定显示形式-->
+            <ListView FontSize="16" x:Name="GroupListBox" HorizontalContentAlignment="Stretch" 
+                      MouseDoubleClick="GroupList_MouseDoubleClick" SelectionChanged="GroupList_SelectionChange"
+                      MouseDown="GroupListBox_Click" av:ItemsSource="{av:SampleData ItemCount=5}">
+                <ListView.ItemTemplate>
+                    <DataTemplate>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Margin="5">
+                            <Image Source="{Binding Icon}" Width="30" Height="30"/>
+                            <TextBlock Text="{Binding GroupName}" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+                <ListView.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Header="_添加类型" Click="AddGroup_Click"/>
+                        <MenuItem Header="_刷新" Click="FreshGroup_Click"/>
+                        <MenuItem Header="_修改名称" Click="ChangeGroupName_Click" x:Name="ChangeGroupNameBt"/>
+                        <MenuItem Header="_删除该类型" Click="DelGroup_Click" x:Name="DelGroupBt"/>
+                    </ContextMenu>
+                </ListView.ContextMenu>
+            </ListView>
+            <!--游戏组设置结束-->
+            <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch"/>
+            <!-- 显示具体内容 -->
+            <DockPanel Grid.Column="2" LastChildFill="True">
+                <TextBox FontSize="14" DockPanel.Dock="Bottom" Height="80" IsReadOnly="True" x:Name="Debug_text" VerticalScrollBarVisibility="Auto" TextChanged="Debug_text_TextChange"/>
+                <ListView x:Name="ToolsListView" FontSize="14" HorizontalContentAlignment="Stretch" Background="#FFFFF9F0" 
+                          MouseDown="ToolsListView_MouseClick" MouseDoubleClick="ToolsListView_MouseBoubleClick"
+                          av:ItemsSource="{av:SampleData ItemCount=5}">
+                    <ListView.Resources>
+                        <DataTemplate x:Key="Show">
+                            <StackPanel Orientation="Horizontal">
+                                <Image Width="15" Height="15" Source="{Binding Icon}"/>
+                                <TextBlock Text="{Binding Name}" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ListView.Resources>
+                    <ListView.View>
+                        <GridView>
+                            <GridViewColumn Width="200" Header="名称" CellTemplate="{StaticResource Show}"/>
+                            <GridViewColumn Header="目标路径" Width="200" DisplayMemberBinding="{Binding ToolPath}"/>
+                            <GridViewColumn Header="上一次运行时间" Width="150" DisplayMemberBinding="{Binding Time}"/>
+                        </GridView>
+                    </ListView.View>
+                    <ListView.ContextMenu>
+                        <ContextMenu>
+                            <MenuItem Header="_打开" Click="OpenToolsBt_Click" x:Name="OpenToolsBt"/>
+                            <MenuItem Header="_添加工具" Click="AddTools_Click" x:Name="AddToolsBt"/>
+                            <MenuItem Header="_刷新" Click="FreshToolsList_Click" x:Name="FreshToolsListBt"/>
+                            <MenuItem Header="_修改" Click="EditToolsData_Click" x:Name="EditToolsBt"/>
+                            <MenuItem Header="_在文件管理器中打开" Click="OpenOnFileBt_Click" x:Name="OpenOnFileBt"/>
+                            <MenuItem Header="_删除" Click="DelTools_Click" x:Name="DelToolBt"/>
+                        </ContextMenu>
+                    </ListView.ContextMenu>
+                </ListView>
+            </DockPanel>
+        </Grid>
+        <!--本体设置结束-->
+    </DockPanel>
+
+</Window>
