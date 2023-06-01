@@ -103,10 +103,13 @@ namespace ToolBox
             {
                 Rect restoreBounds = Properties.Settings.Default.FormSize;
                 this.WindowState = Properties.Settings.Default.MainWindowState;
-                this.Left = restoreBounds.Left;
-                this.Top = restoreBounds.Top;
-                this.Width = restoreBounds.Width;
-                this.Height = restoreBounds.Height;
+                if (restoreBounds.Width != 0 && restoreBounds.Height != 0)
+                {
+                    this.Left = restoreBounds.Left;
+                    this.Top = restoreBounds.Top;
+                    this.Width = restoreBounds.Width;
+                    this.Height = restoreBounds.Height;
+                }
             }
             catch { }
 
