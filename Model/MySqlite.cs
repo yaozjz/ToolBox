@@ -51,6 +51,17 @@ namespace ToolBox.Model
             return result;
         }
 
+        //获取数据库最后一行数据
+        public SQLiteDataReader GetLastData(string table_name, string data = "*")
+        {
+            return ReadData($"select {data} from {table_name} order by ID desc limit 1;");
+        }
+        //获取数据库第一行数据
+        public SQLiteDataReader GetFirstData(string table_name, string data = "*")
+        {
+            return ReadData($"select {data} from {table_name} limit 1;");
+        }
+
         /// <summary>
         /// 关闭连接
         /// </summary>

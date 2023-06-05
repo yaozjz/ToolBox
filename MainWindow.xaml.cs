@@ -19,27 +19,30 @@ namespace ToolBox
 
         //记录现在的数据表名称，避免重复多次查询数据库
         string now_table_name = string.Empty;
-
+        string Double_Click_table = string.Empty;
+        
         private void init_database(string sql_path)
         {
             try
             {
                 conn_obj.ConnectSQL(sql_path);
                 //记录组名称以及对应的数据表名称
-                conn_obj.CommitCommand("create table if not exists GroupName(ID INTEGER PRIMARY KEY Autoincrement, Name TEXT NOT NULL, TableName TEXT);");
+                conn_obj.CommitCommand("create table if not exists GroupName(ID INTEGER PRIMARY KEY Autoincrement, Name TEXT NOT NULL, TableName TEXT, seq INT not null);");
             }
             catch (Exception ex)
             {
-                Debug_text.AppendText("数据库初始化失败." + ex.Message);
+                Console.WriteLine("数据库初始化失败." + ex.Message);
             }
         }
 
-        //刷新组数据
+        /// <summary>
+        /// 刷新组数据
+        /// </summary>
         private void FreshGroup()
         {
             try
             {
-                var result = conn_obj.ReadData("SELECT * FROM GroupName;");
+                var result = conn_obj.ReadData("SELECT * FROM GroupName order by seq asc;");
                 List<Model.GroupBinding> items = new List<Model.GroupBinding>();
                 string iconPath = "Image/ico_png.png";
                 while (result.Read())
@@ -51,7 +54,7 @@ namespace ToolBox
             }
             catch (Exception ex)
             {
-                Debug_text.AppendText("错误信息" + ex.Message + "\r");
+                Console.WriteLine("错误信息" + ex.Message);
             }
         }
         /// <summary>
@@ -63,7 +66,7 @@ namespace ToolBox
             try
             {
                 List<Model.ToolsBinding> tools_items = new List<Model.ToolsBinding>();
-                var result = conn_obj.ReadData($"SELECT * FROM {group_name};");
+                var result = conn_obj.ReadData($"SELECT * FROM {group_name} order by seq asc;");
                 while (result.Read())
                 {
                     string _path = result[2] as string;
@@ -74,7 +77,7 @@ namespace ToolBox
             }
             catch (Exception ex)
             {
-                Debug_text.AppendText("错误信息：" + ex.Message + "\r");
+                Console.WriteLine("错误信息：" + ex.Message);
             }
         }
         /// <summary>
@@ -91,7 +94,22 @@ namespace ToolBox
             if (list.Count > 0)
                 return new string[] { get_data.GroupName, list[0] };
             else
-                return new string[] { get_data.GroupName, list[0] };
+                return new string[] { get_data.GroupName, string.Empty };
+        }
+
+        private int[] GetseqAndID(string table_name, bool isfirst = false)
+        {
+            List<string[]> output = new List<string[]>();
+            SQLiteDataReader result;
+            if (isfirst)
+                result = conn_obj.GetFirstData(table_name, "seq, ID");
+            else
+                result = conn_obj.GetLastData(table_name, "seq, ID");
+            while (result.Read())
+                output.Add(new string[] { result[0].ToString(), result[1].ToString() });
+            if (output.Count > 0)
+                return new int[] { int.Parse(output[0][0]), int.Parse(output[0][1]) };
+            return new int[] { -1, -1 };
         }
 
         public MainWindow()
@@ -116,8 +134,6 @@ namespace ToolBox
             init_database(base_config_path + "config.db");
 
             FreshGroup();
-
-            Debug_text.AppendText("运行开始\r");
         }
 
         //退出程序
@@ -132,13 +148,13 @@ namespace ToolBox
             if (GroupListBox.SelectedIndex > -1)
             {
                 string[] get_data = GetGroupDataFromTable();
-                if (get_data[1] != null)
+                if (get_data[1] != string.Empty)
                 {
                     FreshToolName(get_data[1]);
-                    now_table_name = get_data[1];
+                    Double_Click_table = get_data[1];
                 }
                 else
-                    Debug_text.AppendText("工具列表获取失败");
+                    MessageBox.Show("工具列表获取失败");
             }
         }
 
@@ -157,7 +173,7 @@ namespace ToolBox
             }
             catch (Exception ex)
             {
-                Debug_text.AppendText("打开数据库：" + sql_path + "的连接失败：" + ex.Message);
+                Console.WriteLine("打开数据库：" + sql_path + "的连接失败：" + ex.Message);
             }
             FreshGroup();
         }
@@ -170,10 +186,12 @@ namespace ToolBox
             };
             if (addNamesForms.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
+                //获取最后一行类名
+                int[] seq_and_id = GetseqAndID("GroupName");
                 string sql = $"create table if not exists {addNamesForms.TableName.Text}(ID INTEGER PRIMARY KEY Autoincrement, " +
-                    $"Name TEXT NOT NULL, Path TEXT NOT NULL, Time TEXT);" +
+                    $"Name TEXT NOT NULL, Path TEXT NOT NULL, Time TEXT, seq INT not null);" +
                     //将表名称和组名称插入到组名称数据表
-                    $"insert into GroupName (Name, TableName) values ('{addNamesForms.Name_Dt.Text}', '{addNamesForms.TableName.Text}');";
+                    $"insert into GroupName (Name, TableName, seq) values ('{addNamesForms.Name_Dt.Text}', '{addNamesForms.TableName.Text}', {seq_and_id[0] + 1});";
                 conn_obj.CommitCommand(sql);
             }
             addNamesForms.Dispose();
@@ -198,14 +216,13 @@ namespace ToolBox
                     conn_obj.CommitCommand(sql);
                     ToolsListView.ItemsSource = new List<Model.ToolsBinding>();
                     now_table_name = string.Empty;
+                    Double_Click_table = string.Empty;
                     FreshGroup();
                 }
-                else
-                    Debug_text.AppendText("没有选中数据库");
             }
             catch (Exception ex)
             {
-                Debug_text.AppendText("删除出错：" + ex.Message);
+                Console.WriteLine("删除出错：" + ex.Message);
             }
         }
         //控制组右键菜单状态
@@ -213,6 +230,8 @@ namespace ToolBox
         {
             DelGroupBt.IsEnabled = status;
             ChangeGroupNameBt.IsEnabled = status;
+            GroupDownMove.IsEnabled = status;
+            GroupUpMove.IsEnabled = status;
         }
 
         //类型点击
@@ -258,10 +277,6 @@ namespace ToolBox
             }
             else
                 now_table_name = string.Empty;
-            if (now_table_name != string.Empty)
-                Debug_text.AppendText(now_table_name + "\r");
-            else
-                Debug_text.AppendText("没有选中的类\r");
         }
 
         //==============工具表编辑
@@ -271,6 +286,8 @@ namespace ToolBox
             EditToolsBt.IsEnabled = status;
             OpenToolsBt.IsEnabled = status;
             OpenOnFileBt.IsEnabled = status;
+            ToolsDownMove.IsEnabled = status;
+            ToolsUpMove.IsEnabled = status;
         }
         //添加工具
         private void AddTools_Click(object sender, RoutedEventArgs e)
@@ -281,23 +298,25 @@ namespace ToolBox
             };
             if (addToolsForm.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
-                conn_obj.CommitCommand($"insert into {now_table_name} (Name, Path) values ('{addToolsForm.ToolsName.Text}', '{addToolsForm.ToolsPath.Text}');");
+                //查询最后一行数据
+                int[] last_line = GetseqAndID(Double_Click_table);
+                conn_obj.CommitCommand($"insert into {Double_Click_table} (Name, Path, seq) values ('{addToolsForm.ToolsName.Text}', '{addToolsForm.ToolsPath.Text}', {last_line[0] + 1});");
             }
             addToolsForm.Dispose();
-            FreshToolName(now_table_name);
+            FreshToolName(Double_Click_table);
         }
         //刷新
         private void FreshToolsList_Click(object sender, RoutedEventArgs e)
         {
-            FreshToolName(now_table_name);
+            FreshToolName(Double_Click_table);
         }
         //删除
         private void DelTools_Click(object sender, RoutedEventArgs e)
         {
             Model.ToolsBinding get_data = ToolsListView.SelectedItem as Model.ToolsBinding;
             if (get_data != null)
-                conn_obj.CommitCommand($"DELETE FROM {now_table_name} where Name = '{get_data.Name}';");
-            FreshToolName(now_table_name);
+                conn_obj.CommitCommand($"DELETE FROM {Double_Click_table} where Name = '{get_data.Name}';");
+            FreshToolName(Double_Click_table);
         }
         //修改
         private void EditToolsData_Click(object sender, RoutedEventArgs e)
@@ -311,16 +330,16 @@ namespace ToolBox
             addToolsForm1.ToolsPath.Text = get_data.ToolPath;
             if (addToolsForm1.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
-                conn_obj.CommitCommand($"update {now_table_name} set Name = '{addToolsForm1.ToolsName.Text}', " +
+                conn_obj.CommitCommand($"update {Double_Click_table} set Name = '{addToolsForm1.ToolsName.Text}', " +
                     $"Path = '{addToolsForm1.ToolsPath.Text}' where Name = '{get_data.Name}';");
             }
             addToolsForm1.Dispose();
-            FreshToolName(now_table_name);
+            FreshToolName(Double_Click_table);
         }
         //点击控制
         private void ToolsListView_MouseClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
-            if (now_table_name == string.Empty)
+            if (Double_Click_table == string.Empty)
             {
                 AddToolsBt.IsEnabled = false;
                 FreshToolsListBt.IsEnabled = false;
@@ -336,15 +355,6 @@ namespace ToolBox
                 StatusToToolsContextMenu(false);
         }
         //=============END++++++++++++
-        //debug滚动条，防止内存泄漏
-        private void Debug_text_TextChange(object sender, TextChangedEventArgs e)
-        {
-            Debug_text.ScrollToEnd();
-            if (Debug_text.LineCount > 3001)
-            {
-                Debug_text.Text = Debug_text.Text.Substring(Debug_text.GetLineText(0).Length + 1);
-            }
-        }
 
         //============工具运行设置
         //多线程与委托
@@ -405,6 +415,98 @@ namespace ToolBox
             Properties.Settings.Default.MainWindowState = this.WindowState;
 
             Properties.Settings.Default.Save();
+        }
+
+        //上移下移功能
+        /// <summary>
+        /// 获取排序和ID
+        /// </summary>
+        /// <param name="table_name"></param>
+        /// <param name="key"></param>
+        /// <param name="volue"></param>
+        /// <returns>seq, ID</returns>
+        private int[] getID(string table_name, string key, string volue)
+        {
+            var result = conn_obj.ReadData($"select seq, id from {table_name} where {key} = '{volue}';");
+            List<string[]> ids = new List<string[]>();
+            while (result.Read())
+            {
+                if (result[0] != null)
+                    ids.Add(new string[] { result[0].ToString(), result[1].ToString() });
+            }
+            if (ids[0] != null)
+                return new int[] { int.Parse(ids[0][0]), int.Parse(ids[0][1]) };
+            else return new int[] { -1, -1 };
+        }
+        /// <summary>
+        /// 组列表上移
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void GroupUpMove_Click(object sender, RoutedEventArgs e)
+        {
+            Model.GroupBinding get_data = GroupListBox.SelectedItem as Model.GroupBinding;
+            int[] seq_id = getID("GroupName", "Name", get_data.GroupName);
+            //检测当前是否为最顶部的状态，如果是则不允许上移操作
+            if (seq_id[0] <= 0) return;
+            int[] Before_seq = getID("GroupName", "seq", (seq_id[0] - 1).ToString());
+            string sql = $"update GroupName set seq = {seq_id[0] - 1} where id = {seq_id[1]};";
+            //如果有上一个项目则将其调换一下位置，没有则放弃;
+            if (Before_seq[0] > -1)
+                sql += $"update GroupName set seq = {seq_id[0]} where id = {Before_seq[1]};";
+            conn_obj.CommitCommand(sql);
+            FreshGroup();
+        }
+        /// <summary>
+        /// 组列表下移
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void GroupDownMove_Click(object sender, RoutedEventArgs e)
+        {
+            Model.GroupBinding get_data = GroupListBox.SelectedItem as Model.GroupBinding;
+            int[] seq_id = getID("GroupName", "Name", get_data.GroupName);
+            int[] Next_seq = getID("GroupName", "seq", (seq_id[0] + 1).ToString());
+            string sql = $"update GroupName set seq = {seq_id[0] + 1} where id = {seq_id[1]};";
+            //如果有下一个项目则将其调换一下位置，没有则放弃;
+            if (Next_seq[0] > -1)
+                sql += $"update GroupName set seq = {seq_id[0]} where id = {Next_seq[1]};";
+            conn_obj.CommitCommand(sql);
+            FreshGroup();
+        }
+        /// <summary>
+        /// 工具列表上移
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void ToolsUpMove_Click(object sender, RoutedEventArgs e)
+        {
+            Model.ToolsBinding get_data = ToolsListView.SelectedItem as Model.ToolsBinding;
+            int[] seq_id = getID(Double_Click_table, "Name", get_data.Name);
+            int[] Before_seq = getID(Double_Click_table, "seq", (seq_id[0] - 1).ToString());
+            string sql = $"update {Double_Click_table} set seq = {seq_id[0] - 1} where id = {seq_id[1]};";
+            //如果有上一个项目则将其调换一下位置，没有则放弃;
+            if (Before_seq[0] > -1)
+                sql += $"update {Double_Click_table} set seq = {seq_id[0]} where id = {Before_seq[1]};";
+            conn_obj.CommitCommand(sql);
+            FreshToolName(Double_Click_table);
+        }
+        /// <summary>
+        /// 工具列表下移
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void ToolsDownMove_Click(object sender, RoutedEventArgs e)
+        {
+            Model.ToolsBinding get_data = ToolsListView.SelectedItem as Model.ToolsBinding;
+            int[] seq_id = getID(Double_Click_table, "Name", get_data.Name);
+            int[] Next_seq = getID(Double_Click_table, "seq", (seq_id[0] + 1).ToString());
+            string sql = $"update {Double_Click_table} set seq = {seq_id[0] + 1} where id = {seq_id[1]};";
+            //如果有下一个项目则将其调换一下位置，没有则放弃;
+            if (Next_seq[0] > -1)
+                sql += $"update {Double_Click_table} set seq = {seq_id[0]} where id = {Next_seq[1]};";
+            conn_obj.CommitCommand(sql);
+            FreshToolName(Double_Click_table);
         }
     }
 

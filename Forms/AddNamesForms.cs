@@ -20,7 +20,7 @@ namespace ToolBox.Forms
 
         private void Ok_Bt_Click(object sender, EventArgs e)
         {
-            if (Name_Dt.Text.Trim() != "" && Regex.Match(TableName.Text, @"^[A-Za-z_]+$").Success)
+            if (Name_Dt.Text.Trim() != "" && Regex.Match(TableName.Text, @"^[A-Za-z_0-9]+$").Success)
                 this.DialogResult = DialogResult.OK;
             else
                 MessageBox.Show("输入有误！");

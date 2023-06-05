@@ -43,6 +43,8 @@
                         <MenuItem Header="_添加类型" Click="AddGroup_Click"/>
                         <MenuItem Header="_刷新" Click="FreshGroup_Click"/>
                         <MenuItem Header="_修改名称" Click="ChangeGroupName_Click" x:Name="ChangeGroupNameBt"/>
+                        <MenuItem Header="_上移" Click="GroupUpMove_Click" x:Name="GroupUpMove"/>
+                        <MenuItem Header="_下移" Click="GroupDownMove_Click" x:Name="GroupDownMove"/>
                         <MenuItem Header="_删除该类型" Click="DelGroup_Click" x:Name="DelGroupBt"/>
                     </ContextMenu>
                 </ListView.ContextMenu>
@@ -51,7 +53,6 @@
             <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch"/>
             <!-- 显示具体内容 -->
             <DockPanel Grid.Column="2" LastChildFill="True">
-                <TextBox FontSize="14" DockPanel.Dock="Bottom" Height="80" IsReadOnly="True" x:Name="Debug_text" VerticalScrollBarVisibility="Auto" TextChanged="Debug_text_TextChange"/>
                 <ListView x:Name="ToolsListView" FontSize="14" HorizontalContentAlignment="Stretch" Background="#FFFFF9F0" 
                           MouseDown="ToolsListView_MouseClick" MouseDoubleClick="ToolsListView_MouseBoubleClick"
                           av:ItemsSource="{av:SampleData ItemCount=5}">
@@ -66,8 +67,8 @@
                     <ListView.View>
                         <GridView>
                             <GridViewColumn Width="200" Header="名称" CellTemplate="{StaticResource Show}"/>
-                            <GridViewColumn Header="目标路径" Width="200" DisplayMemberBinding="{Binding ToolPath}"/>
-                            <GridViewColumn Header="上一次运行时间" Width="150" DisplayMemberBinding="{Binding Time}"/>
+                            <GridViewColumn Header="目标路径" Width="300" DisplayMemberBinding="{Binding ToolPath}"/>
+                            <GridViewColumn Header="上一次运行时间" Width="200" DisplayMemberBinding="{Binding Time}"/>
                         </GridView>
                     </ListView.View>
                     <ListView.ContextMenu>
@@ -77,6 +78,8 @@
                             <MenuItem Header="_刷新" Click="FreshToolsList_Click" x:Name="FreshToolsListBt"/>
                             <MenuItem Header="_修改" Click="EditToolsData_Click" x:Name="EditToolsBt"/>
                             <MenuItem Header="_在文件管理器中打开" Click="OpenOnFileBt_Click" x:Name="OpenOnFileBt"/>
+                            <MenuItem Header="_上移" Click="ToolsUpMove_Click" x:Name="ToolsUpMove"/>
+                            <MenuItem Header="_下移" Click="ToolsDownMove_Click" x:Name="ToolsDownMove"/>
                             <MenuItem Header="_删除" Click="DelTools_Click" x:Name="DelToolBt"/>
                         </ContextMenu>
                     </ListView.ContextMenu>
