@@ -43,8 +43,8 @@ namespace ToolBox.Forms
         {
             OpenFileDialog dlg = new OpenFileDialog();
             dlg.FileName = "游戏启动程序";
-            dlg.DefaultExt = ".exe";
-            dlg.Filter = "游戏启动|*.exe";
+            //dlg.DefaultExt = ".exe";
+            dlg.Filter = "txt files (*.exe,*.bat)|*.exe;*.bat|All files (*.*)|*.*";
             if (dlg.ShowDialog() == DialogResult.OK)
             {
                 string _path = dlg.FileName;
