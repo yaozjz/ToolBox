@@ -19,8 +19,7 @@ namespace ToolBox
 
         //记录现在的数据表名称，避免重复多次查询数据库
         string now_table_name = string.Empty;
-        string Double_Click_table = string.Empty;
-        
+
         private void init_database(string sql_path)
         {
             try
@@ -32,6 +31,16 @@ namespace ToolBox
             catch (Exception ex)
             {
                 Console.WriteLine("数据库初始化失败." + ex.Message);
+            }
+        }
+        /// <summary>
+        /// 初始化选择项
+        /// </summary>
+        void InitGroup_Selected()
+        {
+            if (GroupListBox.Items.Count > 0)
+            {
+                GroupListBox.SelectedIndex = 0;
             }
         }
 
@@ -51,6 +60,7 @@ namespace ToolBox
                 }
                 result.Close();
                 GroupListBox.ItemsSource = items;
+                InitGroup_Selected();
             }
             catch (Exception ex)
             {
@@ -142,22 +152,6 @@ namespace ToolBox
             this.Close();
         }
 
-        //组类型双击
-        private void GroupList_MouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
-        {
-            if (GroupListBox.SelectedIndex > -1)
-            {
-                string[] get_data = GetGroupDataFromTable();
-                if (get_data[1] != string.Empty)
-                {
-                    FreshToolName(get_data[1]);
-                    Double_Click_table = get_data[1];
-                }
-                else
-                    MessageBox.Show("工具列表获取失败");
-            }
-        }
-
         //数据库创建
         private void Create_SQL_Click(object sender, RoutedEventArgs e)
         {
@@ -216,7 +210,6 @@ namespace ToolBox
                     conn_obj.CommitCommand(sql);
                     ToolsListView.ItemsSource = new List<Model.ToolsBinding>();
                     now_table_name = string.Empty;
-                    Double_Click_table = string.Empty;
                     FreshGroup();
                 }
             }
@@ -272,8 +265,14 @@ namespace ToolBox
         {
             if (GroupListBox.SelectedIndex > -1)
             {
-                string[] result = GetGroupDataFromTable();
-                now_table_name = result[1];
+                string[] get_data = GetGroupDataFromTable();
+                if (get_data[1] != string.Empty)
+                {
+                    FreshToolName(get_data[1]);
+                    now_table_name = get_data[1];
+                }
+                else
+                    MessageBox.Show("工具列表获取失败");
             }
             else
                 now_table_name = string.Empty;
@@ -299,24 +298,24 @@ namespace ToolBox
             if (addToolsForm.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
                 //查询最后一行数据
-                int[] last_line = GetseqAndID(Double_Click_table);
-                conn_obj.CommitCommand($"insert into {Double_Click_table} (Name, Path, seq) values ('{addToolsForm.ToolsName.Text}', '{addToolsForm.ToolsPath.Text}', {last_line[0] + 1});");
+                int[] last_line = GetseqAndID(now_table_name);
+                conn_obj.CommitCommand($"insert into {now_table_name} (Name, Path, seq) values ('{addToolsForm.ToolsName.Text}', '{addToolsForm.ToolsPath.Text}', {last_line[0] + 1});");
             }
             addToolsForm.Dispose();
-            FreshToolName(Double_Click_table);
+            FreshToolName(now_table_name);
         }
         //刷新
         private void FreshToolsList_Click(object sender, RoutedEventArgs e)
         {
-            FreshToolName(Double_Click_table);
+            FreshToolName(now_table_name);
         }
         //删除
         private void DelTools_Click(object sender, RoutedEventArgs e)
         {
             Model.ToolsBinding get_data = ToolsListView.SelectedItem as Model.ToolsBinding;
             if (get_data != null)
-                conn_obj.CommitCommand($"DELETE FROM {Double_Click_table} where Name = '{get_data.Name}';");
-            FreshToolName(Double_Click_table);
+                conn_obj.CommitCommand($"DELETE FROM {now_table_name} where Name = '{get_data.Name}';");
+            FreshToolName(now_table_name);
         }
         //修改
         private void EditToolsData_Click(object sender, RoutedEventArgs e)
@@ -330,16 +329,16 @@ namespace ToolBox
             addToolsForm1.ToolsPath.Text = get_data.ToolPath;
             if (addToolsForm1.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
-                conn_obj.CommitCommand($"update {Double_Click_table} set Name = '{addToolsForm1.ToolsName.Text}', " +
+                conn_obj.CommitCommand($"update {now_table_name} set Name = '{addToolsForm1.ToolsName.Text}', " +
                     $"Path = '{addToolsForm1.ToolsPath.Text}' where Name = '{get_data.Name}';");
             }
             addToolsForm1.Dispose();
-            FreshToolName(Double_Click_table);
+            FreshToolName(now_table_name);
         }
         //点击控制
         private void ToolsListView_MouseClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
-            if (Double_Click_table == string.Empty)
+            if (now_table_name == string.Empty)
             {
                 AddToolsBt.IsEnabled = false;
                 FreshToolsListBt.IsEnabled = false;
@@ -356,7 +355,7 @@ namespace ToolBox
         }
         //=============END++++++++++++
 
-        //============工具运行设置
+        //============工具运行设置===========
         //多线程与委托
         //子线程运行游戏
         public void RunTool(object arr)
@@ -482,14 +481,14 @@ namespace ToolBox
         private void ToolsUpMove_Click(object sender, RoutedEventArgs e)
         {
             Model.ToolsBinding get_data = ToolsListView.SelectedItem as Model.ToolsBinding;
-            int[] seq_id = getID(Double_Click_table, "Name", get_data.Name);
-            int[] Before_seq = getID(Double_Click_table, "seq", (seq_id[0] - 1).ToString());
-            string sql = $"update {Double_Click_table} set seq = {seq_id[0] - 1} where id = {seq_id[1]};";
+            int[] seq_id = getID(now_table_name, "Name", get_data.Name);
+            int[] Before_seq = getID(now_table_name, "seq", (seq_id[0] - 1).ToString());
+            string sql = $"update {now_table_name} set seq = {seq_id[0] - 1} where id = {seq_id[1]};";
             //如果有上一个项目则将其调换一下位置，没有则放弃;
             if (Before_seq[0] > -1)
-                sql += $"update {Double_Click_table} set seq = {seq_id[0]} where id = {Before_seq[1]};";
+                sql += $"update {now_table_name} set seq = {seq_id[0]} where id = {Before_seq[1]};";
             conn_obj.CommitCommand(sql);
-            FreshToolName(Double_Click_table);
+            FreshToolName(now_table_name);
         }
         /// <summary>
         /// 工具列表下移
@@ -499,14 +498,19 @@ namespace ToolBox
         private void ToolsDownMove_Click(object sender, RoutedEventArgs e)
         {
             Model.ToolsBinding get_data = ToolsListView.SelectedItem as Model.ToolsBinding;
-            int[] seq_id = getID(Double_Click_table, "Name", get_data.Name);
-            int[] Next_seq = getID(Double_Click_table, "seq", (seq_id[0] + 1).ToString());
-            string sql = $"update {Double_Click_table} set seq = {seq_id[0] + 1} where id = {seq_id[1]};";
+            int[] seq_id = getID(now_table_name, "Name", get_data.Name);
+            int[] Next_seq = getID(now_table_name, "seq", (seq_id[0] + 1).ToString());
+            string sql = $"update {now_table_name} set seq = {seq_id[0] + 1} where id = {seq_id[1]};";
             //如果有下一个项目则将其调换一下位置，没有则放弃;
             if (Next_seq[0] > -1)
-                sql += $"update {Double_Click_table} set seq = {seq_id[0]} where id = {Next_seq[1]};";
+                sql += $"update {now_table_name} set seq = {seq_id[0]} where id = {Next_seq[1]};";
             conn_obj.CommitCommand(sql);
-            FreshToolName(Double_Click_table);
+            FreshToolName(now_table_name);
+        }
+        //关于
+        private void About_Click(object sender, RoutedEventArgs e)
+        {
+            MessageBox.Show("简单的介绍：用他来管理你的散装程序。");
         }
     }
 

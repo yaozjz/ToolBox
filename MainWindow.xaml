@@ -16,7 +16,7 @@
             <MenuItem Header="_操作">
                 <MenuItem Header="_添加类型" Click="AddGroup_Click"/>
             </MenuItem>
-            <MenuItem Header="_关于"/>
+            <MenuItem Header="_关于" Click="About_Click"/>
         </Menu>
         <!--菜单设置结束-->
         <!--本体网格设置-->
@@ -28,7 +28,7 @@
             </Grid.ColumnDefinitions>
             <!--组显示，设定显示形式-->
             <ListView FontSize="16" x:Name="GroupListBox" HorizontalContentAlignment="Stretch" 
-                      MouseDoubleClick="GroupList_MouseDoubleClick" SelectionChanged="GroupList_SelectionChange"
+                      SelectionChanged="GroupList_SelectionChange"
                       MouseDown="GroupListBox_Click" av:ItemsSource="{av:SampleData ItemCount=5}">
                 <ListView.ItemTemplate>
                     <DataTemplate>
