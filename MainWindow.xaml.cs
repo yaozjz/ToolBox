@@ -6,6 +6,8 @@ using System.IO;
 using System;
 using System.Diagnostics;
 using System.Threading;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
 
 namespace ToolBox
 {
@@ -80,7 +82,16 @@ namespace ToolBox
                 while (result.Read())
                 {
                     string _path = result[2] as string;
-                    tools_items.Add(new Model.ToolsBinding() { Icon = Model.ConfigFileCreate.GetIcon(_path), Name = result[1] as string, ToolPath = _path, Time = result[3] as string });
+                    ImageSource _icon;
+                    try
+                    {
+                        _icon = Model.ConfigFileCreate.GetIcon(_path);
+                    }
+                    catch
+                    {
+                        _icon = Model.ConfigFileCreate.Icon2ImgSource(Properties.Resources.app);
+                    }
+                    tools_items.Add(new Model.ToolsBinding() { Icon = _icon, Name = result[1] as string, ToolPath = _path, Time = result[3] as string });
                 }
                 result.Close();
                 ToolsListView.ItemsSource = tools_items;
@@ -369,7 +380,7 @@ namespace ToolBox
                 Process p = Process.Start(startInfo);
                 p.WaitForExit();
             }
-            catch { }
+            catch (Exception ex) { MessageBox.Show(ex.Message); }
         }
         //============================
 

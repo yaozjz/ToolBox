@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -33,12 +34,22 @@ namespace ToolBox.Model
             return false;
         }
 
+        public static ImageSource Icon2ImgSource(Icon icon)
+        {
+            return System.Windows.Interop.Imaging.CreateBitmapSourceFromHIcon(icon.Handle,
+            new System.Windows.Int32Rect(0, 0, icon.Width, icon.Height),
+                BitmapSizeOptions.FromEmptyOptions());
+        }
+
+        /// <summary>
+        /// 通过路径获取icon图标
+        /// </summary>
+        /// <param name="path"></param>
+        /// <returns></returns>
         public static ImageSource GetIcon(string path)
         {
-            System.Drawing.Icon icon = System.Drawing.Icon.ExtractAssociatedIcon(path);
-            return System.Windows.Interop.Imaging.CreateBitmapSourceFromHIcon(icon.Handle, 
-                new System.Windows.Int32Rect(0, 0, icon.Width, icon.Height), 
-                BitmapSizeOptions.FromEmptyOptions());
+            Icon icon = Icon.ExtractAssociatedIcon(path);
+            return Icon2ImgSource(icon);
         }
     }
 }
